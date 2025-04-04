@@ -8,7 +8,7 @@ class Qimage:
         self.SUPPORT_EXTENTIONS = '.jpg', '.png', '.jpeg'
         self.count = 0
 
-    def get_images(self, input_folder)-> list:
+    def get_images_path(self, input_folder:str)-> list:
         folder_pathes =os.listdir(input_folder)
         folder_pathes.sort()
         images_path = []
@@ -16,17 +16,24 @@ class Qimage:
             if path.lower().endswith(self.SUPPORT_EXTENTIONS):
                 print(colored(str(path), "yellow"))
                 images_path.append(os.path.join(input_folder, path))
-            
-        return images_path
+        try:    
+            if not images_path:
+                raise FileNotFoundError(f"folder '{input_folder}' is empty!\nPlease make sure that folder is correct or not empty.")
 
-    def resize_hight(self, piece_height, height)->tuple:
-        pieces_count =  height // piece_height
+            else :
+                return images_path
+
+        except Exception as e:
+            print(colored(f'FileNotFoundError : {e}','magenta'))
+            exit()
+
+    def resize_hight(self, piece_height:int, height:int)->tuple:
         deficit = 1000 - (height % piece_height)
         piece_height -= math.ceil(deficit) 
         remainder = height % piece_height
         return piece_height, remainder
 
-    def split_image(self, path, output_folder, piece_hight=8000)->None:
+    def split_image(self, path:str, output_folder:str, piece_hight:int=8000)->None:
         img = Image.open(path)
         width, height = img.size
         riminder = height % piece_hight
@@ -36,8 +43,6 @@ class Qimage:
 
         piece_count = height // piece_hight
         
-
-
         for i in range(piece_count):
             top = i * piece_hight
             bottom = (i+1) * piece_hight
@@ -60,17 +65,16 @@ class Qimage:
 
             last_piece.save(out_path, 'PNG')
             print(f"pic {self.count} saved!")
-            print(f'image {colored(str(os.path.splitext(os.path.basename(os.path.splitext(path)[0]))[0]), "green")} complete')
+            print(f'image {colored(str(os.path.splitext(os.path.basename(path))[0]), "green")} complete')
 
-    def crop_on_folder(self, input_folder, output_folder='', piece_hight=8000, on_folder=False)->None:
+    def crop_images(self,images_path:list, output_folder:str, piece_hight:int=8000)->None:
 
-        os.makedirs(output_folder, exist_ok=True)
-
-        for fileName in self.get_images(input_folder):
+        for fileName in images_path :
             self.split_image(fileName, output_folder, piece_hight)
 
-    def combine_on_folder(self, input_folder, output_folder)->None:
-        images_path:tuple = self.get_images(input_folder)
+        self.count = 0
+
+    def combine_images(self, images_path:list, output_folder:str)->None:
         widths, heights = zip(*(Image.open(path).size for path in images_path))
         output_height = sum(heights)
         width = max(widths)
@@ -86,16 +90,20 @@ class Qimage:
         combined_image.save(os.path.join(output_folder, "combined.png"), format='PNG')
         print("image saved!")
          
-    def run(self):
-        command = input('setting(set) / crop(cr) / combine(cm) : ')
+    def run(self)->None:
+        command = input('setting(set) / crop(cr) / combine(cm) : ').strip().lower()
         match command :
             case "cr":
-                folder_path = input("process on 'crop_in' folder (y) or Enter path : ")
-                self.crop_on_folder(folder_path if folder_path!='y' else 'crop_in', "crop_out")
+                path = input("process on 'crop_in' folder (y) or Enter path : ")
+                folder_path = path if path != 'y' else "crop_in"
+                images_path = self.get_images_path(folder_path)
+                self.crop_images(images_path, "crop_out")
 
             case "cm":
-                folder_path = input("process on 'comb_in' folder (y) or Enter path : ")
-                self.combine_on_folder(folder_path if folder_path !='y' else "comb_in", "comb_out")
+                path = input("process on 'comb_in' folder (y) or Enter path : ")
+                folder_path = path if path != 'y' else "comb_in"
+                images_path = self.get_images_path(folder_path)
+                self.combine_images(images_path, "comb_out")
 
 if __name__ == "__main__":
     qimg = Qimage()
