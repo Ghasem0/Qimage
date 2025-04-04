@@ -8,7 +8,7 @@ class Qimage:
         self.SUPPORT_EXTENTIONS = '.jpg', '.png', '.jpeg'
         self.count = 0
 
-    def get_images(self, input_folder):
+    def get_images(self, input_folder)-> list:
         folder_pathes =os.listdir(input_folder)
         folder_pathes.sort()
         images_path = []
@@ -19,14 +19,14 @@ class Qimage:
             
         return images_path
 
-    def resize_hight(self, piece_height, height):
+    def resize_hight(self, piece_height, height)->tuple:
         pieces_count =  height // piece_height
         deficit = 1000 - (height % piece_height)
         piece_height -= math.ceil(deficit) 
         remainder = height % piece_height
         return piece_height, remainder
 
-    def split_image(self, path, output_folder, piece_hight=8000):
+    def split_image(self, path, output_folder, piece_hight=8000)->None:
         img = Image.open(path)
         width, height = img.size
         riminder = height % piece_hight
@@ -62,15 +62,14 @@ class Qimage:
             print(f"pic {self.count} saved!")
             print(f'image {colored(str(os.path.splitext(os.path.basename(os.path.splitext(path)[0]))[0]), "green")} complete')
 
-    def crop_on_folder(self, input_folder, output_folder, piece_hight=8000):
+    def crop_on_folder(self, input_folder, output_folder='', piece_hight=8000, on_folder=False)->None:
 
         os.makedirs(output_folder, exist_ok=True)
 
-        
         for fileName in self.get_images(input_folder):
             self.split_image(fileName, output_folder, piece_hight)
 
-    def combine_on_folder(self, input_folder, output_folder):
+    def combine_on_folder(self, input_folder, output_folder)->None:
         images_path:tuple = self.get_images(input_folder)
         widths, heights = zip(*(Image.open(path).size for path in images_path))
         output_height = sum(heights)
