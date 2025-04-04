@@ -1,5 +1,6 @@
 from PIL import Image
 import os, math
+from termcolor import colored
 
 
 class Qimage:
@@ -8,8 +9,10 @@ class Qimage:
         self.count = 0
 
     def get_images(self, input_folder):
-        return [os.path.join(input_folder, path) for path in os.listdir(input_folder) if path.lower().endswith(self.SUPPORT_EXTENTIONS)]
-
+        pages_path = [os.path.join(input_folder, path) for path in os.listdir(input_folder).sort() if path.lower().endswith(self.SUPPORT_EXTENTIONS)]
+        for path in pages_path:
+            print(colored(path))
+        return pages_path
     def resize_hight(self, piece_height, height):
         pieces_count =  height // piece_height
         deficit = 1000 - (height % piece_height)
