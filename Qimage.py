@@ -9,10 +9,16 @@ class Qimage:
         self.count = 0
 
     def get_images(self, input_folder):
-        pages_path = [os.path.join(input_folder, path) for path in os.listdir(input_folder).sort() if path.lower().endswith(self.SUPPORT_EXTENTIONS)]
-        for path in pages_path:
-            print(colored(path))
-        return pages_path
+        folder_pathes =os.listdir(input_folder)
+        folder_pathes.sort()
+        images_path = []
+        for path in folder_pathes :
+            if path.lower().endswith(self.SUPPORT_EXTENTIONS):
+                print(colored(str(path), "yellow"))
+                images_path.append(os.path.join(input_folder, path))
+            
+        return images_path
+
     def resize_hight(self, piece_height, height):
         pieces_count =  height // piece_height
         deficit = 1000 - (height % piece_height)
@@ -53,7 +59,8 @@ class Qimage:
             self.count += 1
 
             last_piece.save(out_path, 'PNG')
-            print('last piece saved!')
+            print(f"pic {self.count} saved!")
+            print(f'image {colored(str(os.path.splitext(os.path.basename(os.path.splitext(path)[0]))[0]), "green")} complete')
 
     def crop_on_folder(self, input_folder, output_folder, piece_hight=8000):
 
@@ -78,7 +85,7 @@ class Qimage:
             img.close()
 
         combined_image.save(os.path.join(output_folder, "combined.png"), format='PNG')
-        print("emage saved!")
+        print("image saved!")
          
     def run(self):
         command = input('setting(set) / crop(cr) / combine(cm) : ')
