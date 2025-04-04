@@ -1,3 +1,7 @@
 venv/
+comb_in/
+comb_out/
+crop_in/
+crop_out/
 __pycatch__/
 test.py
