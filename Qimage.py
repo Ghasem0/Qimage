@@ -36,7 +36,7 @@ class Qimage:
         images_path = []
         for path in folder_pathes :
             if path.lower().endswith(self.SUPPORT_EXTENTIONS):
-                print(colored(str(path), "yellow"))
+                # print(colored(str(path), "yellow"))
                 images_path.append(os.path.join(input_folder, path))
         try:    
             if not images_path:
@@ -82,7 +82,7 @@ class Qimage:
                 self.count += 1
 
                 piece.save(out_path, 'PNG')
-                print(f"pic {number} saved!")
+                print(f"splite : pic {number} saved!")
 
             if remainder > 0:
                 top = piece_count * piece_hight
@@ -95,8 +95,8 @@ class Qimage:
                 self.count += 1
 
                 last_piece.save(out_path, 'PNG')
-                print(f"pic {number} saved!")
-                print(f'crop image {colored(str(os.path.splitext(os.path.basename(path))[0]), "green")} complete')
+                print(f"splite : pic {number} saved!")
+                print(f'splite image {colored(str(os.path.splitext(os.path.basename(path))[0]), "green")} complete')
             
             return img_new_path
 
@@ -159,7 +159,7 @@ class Qimage:
                 if remaining_images: # remove remainder-photo from catch folder
                     os.remove(remaining_images[0])
                     self.count -= 1
-                    
+
                 splitted_img_path = self.split_image(combined_img_path, "catch", resize_height=False) # splite comb_img and save them in catch  folder
                 for image_path in splitted_img_path: # move full images to output-folder
                     shutil.move(image_path, output_folder)
