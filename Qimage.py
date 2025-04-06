@@ -2,7 +2,6 @@ from PIL import Image
 import os, math
 from termcolor import colored
 import shutil
-from re import findall
 
 
 
@@ -235,6 +234,10 @@ class Qimage:
                     combined_last_img_path = self.combine_images(last_images_path, self.CATCH_FOLDER)
                     self.split_image(combined_last_img_path, self.DEFUALT_OUTPUT_FOLDER)
                     print(colored("resize complete", "green"))
+
+            case _ :
+                print("please try again and enter true command!")
+                exit()
 
         shutil.rmtree(self.CATCH_FOLDER)  #delete catch folder
                 
