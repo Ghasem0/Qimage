@@ -100,7 +100,7 @@ class Qimage:
             
             return img_new_path
 
-    def crop_images(self, images_path:list, output_folder:str, piece_hight=None)->None:
+    def split_images(self, images_path:list, output_folder:str, piece_hight=None)->None:
         '''crop a list or tuple of images'''
         if piece_hight == None:
             piece_hight = self.DEFUALT_PIECE_HEIGHT
@@ -111,7 +111,8 @@ class Qimage:
         self.count = 0
 
     def combine_images(self, images_path:list, output_folder:str)->str:
-        '''combine a list of images together verticaly'''
+        '''combine a list of images together verticaly''' 
+
         widths, heights = zip(*(self.get_img_size(path) for path in images_path))
         output_height = sum(heights)
         width = max(widths)
@@ -128,7 +129,7 @@ class Qimage:
         self.comb_count += 1 
         path = os.path.join(output_folder, f"comb_{number}.png")
         combined_image.save(path, format='PNG')
-        print(f"image comb_{number} saved!")
+        print(f"combine : image comb_{number} saved!")
         return path
       
     def group_image_by_length(self, images_path:list, output_folder, min_len=None):
@@ -188,7 +189,7 @@ class Qimage:
                 path = input("process on 'crop_in' folder (y) or Enter path : ")
                 folder_path = path if path != 'y' else "crop_in"
                 images_path = self.get_images_path(folder_path)
-                self.crop_images(images_path, "crop_out")
+                self.split_images(images_path, "crop_out")
 
             case "cm":
                 path = input("process on 'comb_in' folder (y) or Enter path : ")
