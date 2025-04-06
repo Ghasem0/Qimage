@@ -2,23 +2,36 @@ from PIL import Image
 import os, math
 from termcolor import colored
 import shutil
-import os
+from re import findall
 
 
 
 class Qimage:
     def __init__(self) -> None:
+        self.DEFUALT_OUTPUT_FOLDER = "output_images"
+        self.DEFUALT_INPUT_FOLDER = "input_images"
+        self.CATCH_FOLDER = "catch"
         self.SUPPORT_EXTENTIONS = ('.jpg', '.png', '.jpeg', '.webp',)
-        self.DIRECTORIES = ('comb_in', 'comb_out', 'crop_in', 'crop_out', 'catch',)
+        self.DIRECTORIES = (self.DEFUALT_OUTPUT_FOLDER, self.DEFUALT_INPUT_FOLDER, self.CATCH_FOLDER,)
         self.DEFUALT_PIECE_HEIGHT = 8000
         self.MIN_HEIGHT_COMBINE = 16000
-        self.count = 0
+        self.split_count = 0
         self.comb_count = 0
 
     def dir_exist(self, directory_list):
         '''insure requirement directories exist.'''
-        for directory in directory_list:
-            os.makedirs(directory, exist_ok=True) #insure directoies exist
+        need_exit = False
+        for directory in directory_list[:-1]:
+            if not os.path.exists(directory):
+                need_exit =True
+                os.makedirs(directory, exist_ok=True) #insure directoies exist
+
+        if need_exit:
+            # if directores not exist . creaete and exit
+            print(colored("your directories now created. please move your images to 'input_images'!", "green"))
+            exit()
+
+        os.makedirs(directory_list[-1], exist_ok=True) # catch folder created just for process and delete
 
     def valid_number(self, num)->str:
         '''this sure numbers that smaller than 10 startswith 0 '''
@@ -76,10 +89,10 @@ class Qimage:
                 bottom = (i+1) * piece_hight
                 piece = img.crop((0, top, width, bottom,))
                 
-                number = self.valid_number(self.count)
+                number = self.valid_number(self.split_count)
                 out_path = os.path.join(output_folder, f'pic_{number}.png')
                 img_new_path.append(out_path)
-                self.count += 1
+                self.split_count += 1
 
                 piece.save(out_path, 'PNG')
                 print(f"splite : pic {number} saved!")
@@ -90,9 +103,9 @@ class Qimage:
 
                 last_piece = img.crop((0, top, width, bottom,))
 
-                number = self.valid_number(self.count)
+                number = self.valid_number(self.split_count)
                 out_path = os.path.join(output_folder, f'pic_{number}.png')
-                self.count += 1
+                self.split_count += 1
 
                 last_piece.save(out_path, 'PNG')
                 print(f"splite : pic {number} saved!")
@@ -108,7 +121,7 @@ class Qimage:
         for fileName in images_path :
             self.split_image(fileName, output_folder, piece_hight)
 
-        self.count = 0
+        self.split_count = 0
 
     def combine_images(self, images_path:list, output_folder:str)->str:
         '''combine a list of images together verticaly''' 
@@ -119,18 +132,18 @@ class Qimage:
         combined_image = Image.new("RGB", (width, output_height))
         
         y_cut = 0
-        for path in images_path:
-            img = Image.open(path)
+        for image_path in images_path:
+            img = Image.open(image_path)
             combined_image.paste(img, (0, y_cut))
             y_cut += img.height
             img.close()
 
         number = self.valid_number(self.comb_count)
         self.comb_count += 1 
-        path = os.path.join(output_folder, f"comb_{number}.png")
-        combined_image.save(path, format='PNG')
+        image_path = os.path.join(output_folder, f"comb_{number}.png")
+        combined_image.save(image_path, format='PNG')
         print(f"combine : image comb_{number} saved!")
-        return path
+        return image_path
       
     def group_image_by_length(self, images_path:list, output_folder, min_len=None):
         '''grouping images base on minimum-length and send for combine'''
@@ -155,19 +168,19 @@ class Qimage:
             current_group_images.append(image_path)
             
             if is_group_ready_to_process or index == images_count -1 : # end of list if height < 8000
-                combined_img_path = self.combine_images(current_group_images, "catch") # combine images and save in catch folder
+                combined_img_path = self.combine_images(current_group_images, self.CATCH_FOLDER) # combine images and save in catch folder
                 
                 if remaining_images: # remove remainder-photo from catch folder
                     os.remove(remaining_images[0])
-                    self.count -= 1
+                    self.split_count -= 1
 
-                splitted_img_path = self.split_image(combined_img_path, "catch", resize_height=False) # splite comb_img and save them in catch  folder
+                splitted_img_path = self.split_image(combined_img_path, self.CATCH_FOLDER, resize_height=False) # splite comb_img and save them in catch  folder
                 for image_path in splitted_img_path: # move full images to output-folder
                     shutil.move(image_path, output_folder)
 
                 os.remove(combined_img_path) # remove main image that combined
 
-                remaining_images = self.get_images_path("catch") 
+                remaining_images = self.get_images_path(self.CATCH_FOLDER) 
                 is_group_ready_to_process = False
 
                 if remaining_images: # add remainder-img path if made in split-image func
@@ -178,24 +191,54 @@ class Qimage:
                     total_height= 0
 
         if current_group_images: # add if there are images that smaler than min-len and not added 
-            shutil.move(current_group_images[0], "comb_out")        
+            shutil.move(current_group_images[0], self.DEFUALT_OUTPUT_FOLDER)        
 
     def run(self)->None:
         self.dir_exist(self.DIRECTORIES) #insure required director exist
 
+        command = input(colored("we need to delete output_images ,enter y to continue or n : ", "red")).strip().lower()
+        match command:
+            case "y":
+                shutil.rmtree(self.DEFUALT_OUTPUT_FOLDER)
+                os.mkdir(self.DEFUALT_OUTPUT_FOLDER)
+
+            case "n":
+                print("ok please come again.")
+                exit()
+
+            case _ :
+                print("please try again and enter true command!")
+                exit()
+
+        
         command = input('setting(set) / crop(cr) / combine(cm) : ').strip().lower()
         match command :
             case "cr":
                 path = input("process on 'crop_in' folder (y) or Enter path : ")
-                folder_path = path if path != 'y' else "crop_in"
+                folder_path = path if path != 'y' else self.DEFUALT_INPUT_FOLDER
                 images_path = self.get_images_path(folder_path)
-                self.split_images(images_path, "crop_out")
+                self.split_images(images_path, self.DEFUALT_OUTPUT_FOLDER)
 
             case "cm":
                 path = input("process on 'comb_in' folder (y) or Enter path : ")
-                folder_path = path if path != 'y' else "comb_in"
+                folder_path = path if path != 'y' else self.DEFUALT_INPUT_FOLDER
                 images_path = self.get_images_path(folder_path)
-                self.group_image_by_length(images_path, "comb_out")
+
+                self.group_image_by_length(images_path, self.DEFUALT_OUTPUT_FOLDER)
+
+                # process for avoid creation small img
+                last_images_path = self.get_images_path(self.DEFUALT_OUTPUT_FOLDER)[-2:] # get 2 last images was splited
+                if self.get_img_size(last_images_path[-1])[1] < 1000 :
+                    print(colored("resize last image...", "yellow"))
+                    self.split_count -= 2 # reset for name 2 last images
+
+                    combined_last_img_path = self.combine_images(last_images_path, self.CATCH_FOLDER)
+                    self.split_image(combined_last_img_path, self.DEFUALT_OUTPUT_FOLDER)
+                    print(colored("resize complete", "green"))
+
+        shutil.rmtree(self.CATCH_FOLDER)  #delete catch folder
+                
+
 
 if __name__ == "__main__":
     qimg = Qimage()
