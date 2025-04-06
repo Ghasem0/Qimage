@@ -20,6 +20,10 @@ class Qimage:
         for directory in directory_list:
             os.makedirs(directory, exist_ok=True) #insure directoies exist
 
+    def valid_number(self, num)->str:
+        '''this sure numbers that smaller than 10 startswith 0 '''
+        return  str(num + 1) if num >= 9 else f'0{ num + 1}'
+
     def get_img_size(self, path:str)->int:
         '''get width, height of image'''
         with Image.open(path) as img:
@@ -72,7 +76,7 @@ class Qimage:
                 bottom = (i+1) * piece_hight
                 piece = img.crop((0, top, width, bottom,))
                 
-                number = self.count + 1 if self.count >= 9 else f'0{self.count + 1}'
+                number = self.valid_number(self.count)
                 out_path = os.path.join(output_folder, f'pic_{number}.png')
                 img_new_path.append(out_path)
                 self.count += 1
@@ -86,7 +90,7 @@ class Qimage:
 
                 last_piece = img.crop((0, top, width, bottom,))
 
-                number = self.count + 1 if self.count >= 9 else f'0{self.count + 1}'
+                number = self.valid_number(self.count)
                 out_path = os.path.join(output_folder, f'pic_{number}.png')
                 self.count += 1
 
@@ -96,7 +100,7 @@ class Qimage:
             
             return img_new_path
 
-    def crop_images(self,images_path:list, output_folder:str, piece_hight=None)->None:
+    def crop_images(self, images_path:list, output_folder:str, piece_hight=None)->None:
         '''crop a list or tuple of images'''
         if piece_hight == None:
             piece_hight = self.DEFUALT_PIECE_HEIGHT
@@ -120,7 +124,7 @@ class Qimage:
             y_cut += img.height
             img.close()
 
-        number = self.comb_count + 1 if self.comb_count >= 9 else f'0{self.comb_count + 1}'
+        number = self.valid_number(self.comb_count)
         self.comb_count += 1 
         path = os.path.join(output_folder, f"comb_{number}.png")
         combined_image.save(path, format='PNG')
@@ -132,45 +136,48 @@ class Qimage:
         if min_len==None :
             min_len = self.MIN_HEIGHT_COMBINE
 
-        group_images:list = []
-        sums:int = 0
-        catch_img =[]
-        sent:bool = False
+        current_group_images:list = []
+        total_height:int = 0
+        remaining_images = []
+        is_group_ready_to_process:bool = False
         self.comb_count = 0
         images_count = len(images_path)
 
-        for ind, path in enumerate(images_path):
-            img_height = self.get_img_size(path)[1]
+        for index, image_path in enumerate(images_path):
+            img_height = self.get_img_size(image_path)[1]
 
-            if sums + img_height > min_len : # if img > 8000px saved
-                sent = True
+            if total_height + img_height > min_len : # if img > 8000px saved
+                is_group_ready_to_process = True
 
-            sums += img_height
+            total_height += img_height
 
-            group_images.append(path)
+            current_group_images.append(image_path)
             
-            if sent or ind == images_count -1 : # end of list if height < 8000
-                comb_path = self.combine_images(group_images, "catch") # combine images and save in catch folder
-                if catch_img:
-                    os.remove(catch_img[0])
+            if is_group_ready_to_process or index == images_count -1 : # end of list if height < 8000
+                combined_img_path = self.combine_images(current_group_images, "catch") # combine images and save in catch folder
+                
+                if remaining_images: # remove remainder-photo from catch folder
+                    os.remove(remaining_images[0])
                     self.count -= 1
-                croped_imgs = self.split_image(comb_path, "catch", resize_height=False) # splite comb_img and save them in catch  folder
-                for path in croped_imgs:
-                    shutil.move(path, output_folder)
+                    
+                splitted_img_path = self.split_image(combined_img_path, "catch", resize_height=False) # splite comb_img and save them in catch  folder
+                for image_path in splitted_img_path: # move full images to output-folder
+                    shutil.move(image_path, output_folder)
 
-                os.remove(comb_path) 
-                catch_img = self.get_images_path("catch") 
-                sent = False
+                os.remove(combined_img_path) # remove main image that combined
 
-                if catch_img: # add catch img if exist
-                    group_images = catch_img.copy()
-                    sums = self.get_img_size(group_images[0])[1]
+                remaining_images = self.get_images_path("catch") 
+                is_group_ready_to_process = False
+
+                if remaining_images: # add remainder-img path if made in split-image func
+                    current_group_images = remaining_images.copy()
+                    total_height = self.get_img_size(current_group_images[0])[1]
                 else :
-                    group_images = []
-                    sums= 0
+                    current_group_images = []
+                    total_height= 0
 
-        if group_images:
-            shutil.move(group_images[0], "comb_out")        
+        if current_group_images: # add if there are images that smaler than min-len and not added 
+            shutil.move(current_group_images[0], "comb_out")        
 
     def run(self)->None:
         self.dir_exist(self.DIRECTORIES) #insure required director exist
