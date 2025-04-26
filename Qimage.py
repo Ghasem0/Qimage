@@ -78,6 +78,8 @@ class Qimage:
 
     def split_image(self, path:str, output_folder:str, resize_height=True, piece_hight=None)->tuple:
         '''crop an image by 8000px height'''
+        
+        #set default peice_hight
         if piece_hight == None:
             piece_hight = self.DEFUALT_PIECE_HEIGHT
 
@@ -134,9 +136,10 @@ class Qimage:
         '''combine a list of images together verticaly''' 
 
         widths, heights = zip(*(self.get_img_size(path) for path in images_path))
-        output_height = sum(heights)
+        total_height = sum(heights)
         width = max(widths)
-        combined_image = Image.new("RGB", (width, output_height))
+
+        combined_image = Image.new("RGB", (width, total_height))
         
         y_cut = 0
         for image_path in images_path:
@@ -218,19 +221,21 @@ class Qimage:
                 exit()
 
         
-        command = input('setting(set) / crop(cr) / combine(cm) : ').strip().lower()
+        command = input('setting(set) / crop(cr) / combination(cm) / resize(rs) : ').strip().lower()
+        
+        
+        if command in ("cr", "set", "cm", "rs"): # if command was valid, get secend input
+            path = input("process on 'input_images' folder (y) or Enter path : ")
+            folder_path = path if path != 'y' else self.DEFUALT_INPUT_FOLDER
+            images_path = self.get_images_path(folder_path)
+
+
         match command :
+
             case "cr":
-                path = input("process on 'crop_in' folder (y) or Enter path : ")
-                folder_path = path if path != 'y' else self.DEFUALT_INPUT_FOLDER
-                images_path = self.get_images_path(folder_path)
                 self.split_images(images_path, self.DEFUALT_OUTPUT_FOLDER)
 
-            case "cm":
-                path = input("process on 'comb_in' folder (y) or Enter path : ")
-                folder_path = path if path != 'y' else self.DEFUALT_INPUT_FOLDER
-                images_path = self.get_images_path(folder_path)
-
+            case "rs":
                 self.group_image_by_length(images_path, self.DEFUALT_OUTPUT_FOLDER)
 
                 # process for avoid creation small img
@@ -243,6 +248,12 @@ class Qimage:
                     self.split_image(combined_last_img_path, self.DEFUALT_OUTPUT_FOLDER)
                     print(colored("resize complete", "green"))
 
+            case "cm":
+                self.combine_images(images_path, self.DEFUALT_OUTPUT_FOLDER)
+                print(colored("combination images complete", "green"))
+
+            case "set":
+                ...
             case _ :
                 print("please try again and enter true command!")
                 exit()
