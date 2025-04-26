@@ -19,18 +19,22 @@ class Qimage:
 
     def dir_exist(self, directory_list):
         '''insure requirement directories exist.'''
+
         need_exit = False
+
+        # those directories must be exist
         for directory in directory_list[:-1]:
             if not os.path.exists(directory):
                 need_exit =True
                 os.makedirs(directory, exist_ok=True) #insure directoies exist
 
+        # if a directory created, we need to finish code and run again
         if need_exit:
-            # if directores not exist . creaete and exit
             print(colored("your directories now created. please move your images to 'input_images'!", "green"))
             exit()
 
-        os.makedirs(directory_list[-1], exist_ok=True) # catch folder created just for process and delete
+        # sometimes (just when proccesing) need to create chtch folder . at end was deleted
+        os.makedirs(directory_list[-1], exist_ok=True)
 
     def valid_number(self, num)->str:
         '''this sure numbers that smaller than 10 startswith 0 '''
@@ -44,14 +48,18 @@ class Qimage:
 
     def get_images_path(self, input_folder:str)-> list:
         '''get all images path from folder'''
-        folder_pathes =sorted(os.listdir(input_folder))
-        images_path = []
+
+        folder_pathes =sorted(os.listdir(input_folder)) # get all images path
+
+        images_path = [] # supported images format
         for path in folder_pathes :
             if path.lower().endswith(self.SUPPORT_EXTENTIONS):
-                # print(colored(str(path), "yellow"))
                 images_path.append(os.path.join(input_folder, path))
+
+
         try:    
-            if not images_path:
+            # when there are no image in folder, rase an error
+            if not images_path: 
                 raise FileNotFoundError(f"folder '{input_folder}' is empty!\nPlease make sure that folder is correct or not empty.")
 
             else :
